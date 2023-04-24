@@ -1,0 +1,51 @@
+#!/usr/local/var/pyenv/shims/python
+# coding: UTF-8
+
+import sys
+import subprocess
+import ec2_info
+
+def main():
+    hosts_list = ec2_info.get_instance()
+    selected_host = select_host(hosts_list)
+    cmd = create_command(selected_host)
+    try:
+        subprocess.call(cmd, shell=True)
+    except:
+        print('ERROR: ログインできませんでした！')
+        sys.exit()
+
+####################
+# method
+####################
+def select_host(hosts_list):
+    """EC2インスタンスの表示及び選択"""
+    while True:
+        print('\n--- Hosts List ---')
+        for index, host in enumerate(hosts_list, 1):
+            print(f"{index})  {host['alias_name']}\t{host['public_dns_name']}")
+
+        # ホストを選択
+        print('\n終了するときは q を入力')
+        num = input('\ninput) ')
+
+        if num == 'q':
+            sys.exit()
+        try:
+            if len(hosts_list) >= int(num) > 0:
+                print('\n\n--- Selected Host ---')
+                selected_host = hosts_list[int(num)-1]
+                print(f"{selected_host['alias_name']} を選択しました\n")
+                return selected_host
+            else:
+                print('ERROR: 範囲内の数値を入力して下さい！')
+        except ValueError:
+            print('ERROR: 範囲内の数値を入力して下さい！')
+
+def create_command(selected_host):
+    """ssh形式のコマンド作成"""
+    cmd = f"ssh -i {selected_host['key_name']} {selected_host['user_name']}@{selected_host['public_dns_name']}"
+    return cmd
+
+if __name__ == '__main__':
+    main()
